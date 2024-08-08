@@ -79,7 +79,7 @@ func (r *SelfhealingWebReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// Condition 2. HealthStatus != Healthy
 	// Action: Delete Unhealthy Pods
 	if selfhealingWeb.Status.HealthStatus == "Critical" || selfhealingWeb.Status.HealthStatus == "Warning" {
-		err = r.DeleteUnhealthyPods(ctx, &selfhealingWeb)
+		err := r.DeleteUnhealthyPods(ctx, &selfhealingWeb)
 		if err != nil {
 			log.Error(err, "Error Deleting Unhealthy Pods")
 			return ctrl.Result{}, err
@@ -148,12 +148,7 @@ func (r *SelfhealingWebReconciler) ScalePods(ctx context.Context, selfhealingWeb
 	} else if int32(len(pods.Items)) > selfhealingWeb.Spec.Replicas {
 		// Scale Down
 		for i := selfhealingWeb.Spec.Replicas; i < int32(len(pods.Items)); i++ {
-			pod := &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      selfhealingWeb.Name + "-pod-" + string(i),
-					Namespace: "default",
-				},
-			}
+			pod := &corev1.PodList{}.Items[i]
 			if err := r.Delete(ctx, pod); err != nil {
 				log.Error(err, "Error Deleting Pod")
 				return err
@@ -180,7 +175,7 @@ func (r *SelfhealingWebReconciler) DeleteUnhealthyPods(ctx context.Context, self
 		label := map[string]string{
 			"app": selfhealingWeb.Name,
 		}
-		var pods corev1.PodList
+		var pods &corev1.PodList{}
 		if err := r.List(ctx, &pods, client.MatchingLabels(label)); err != nil {
 			log.Error(err, "Error Listing Pods")
 			return err
@@ -191,7 +186,7 @@ func (r *SelfhealingWebReconciler) DeleteUnhealthyPods(ctx context.Context, self
 					log.Error(err, "Error Deleting Pod")
 					return err
 				}
-				time.sleep(5 * time.Second)
+				time.Sleep(5 * time.Second)
 			}
 		}
 	}
@@ -200,6 +195,7 @@ func (r *SelfhealingWebReconciler) DeleteUnhealthyPods(ctx context.Context, self
 
 
 // Periodic Watcher
+// Interval: 10 seconds
 func (r *SelfhealingWebReconciler) Watcher() {
 	ctx := context.Background()
 	log := log.FromContext(ctx)
