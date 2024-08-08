@@ -99,7 +99,9 @@ func (r *SelfhealingWebReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 }
 
 // Create Pod
-func NewPod(cr *appv1.SelfhealingWeb) *corev1.Pod {
+func NewPod(cr *appv1.SelfhealingWeb) *corev1.Pod {	
+	ctx := context.Background()
+	log := log.FromContext(ctx)
 	log.Info("Create Pod")
 	labels := map[string]string{
 		"app": cr.Name,
@@ -124,7 +126,11 @@ func NewPod(cr *appv1.SelfhealingWeb) *corev1.Pod {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SelfhealingWebReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if r.stopCh != nil {
+	ctx := context.Background()
+	log := log.FromContext(ctx)
+	log.Info("SetupWithManager Called")
+
+	if r.stopCh == nil {
 		r.stopCh = make(chan struct{})
 		go r.Watcher()
 	}
@@ -135,11 +141,12 @@ func (r *SelfhealingWebReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // Periodic Watcher
 func (r *SelfhealingWebReconciler) Watcher() {
-	log.Info("Running periodic task")
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
 	ctx := context.Background()
 	log := log.FromContext(ctx)
+	log.Info("Running periodic task")
+
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
@@ -147,7 +154,7 @@ func (r *SelfhealingWebReconciler) Watcher() {
 			var selfhealingWebs appv1.SelfhealingWebList
 			if err := r.List(ctx, &selfhealingWebs); err != nil {
 				log.Error(err, "Error Listing SelfhealingWebs")
-				return
+				continue
 			}
 
 			for _, selfhealingWeb := range selfhealingWebs.Items {
@@ -158,7 +165,7 @@ func (r *SelfhealingWebReconciler) Watcher() {
 				var pods corev1.PodList
 				if err := r.List(ctx, &pods, client.MatchingLabels(label)); err != nil {
 					log.Error(err, "Error Listing Pods")
-					return
+					continue
 				}
 				for _, pod := range pods.Items {
 					statusCode := checkAPI(pod)
@@ -170,7 +177,7 @@ func (r *SelfhealingWebReconciler) Watcher() {
 				}
 				if err := r.Status().Update(ctx, &selfhealingWeb); err != nil {
 					log.Error(err, "Error Updating SelfhealingWeb Status")
-					return
+					continue
 				}
 			}
 		case <-r.stopCh:
