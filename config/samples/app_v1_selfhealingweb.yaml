@@ -8,7 +8,5 @@ metadata:
 spec:
   # Example of a self-healing web application
   # replicas: 1
-  # monitoringInterval: 10 (Default 5) (unit. Second)
   replicas: 1
-  monitoringInterval: 10
   

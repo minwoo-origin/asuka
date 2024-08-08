@@ -18,6 +18,8 @@ package controller
 
 import (
 	"context"
+	"net/http"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -37,6 +39,7 @@ import (
 type SelfhealingWebReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	stopCh chan struct{}
 }
 
 // +kubebuilder:rbac:groups=app.web.test,resources=selfhealingwebs,verbs=get;list;watch;create;update;patch;delete
@@ -131,14 +134,13 @@ func (r *SelfhealingWebReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // Periodic Watcher
 func (r *SelfhealingWebReconciler) Watcher() {
-	interval := selfhealingWeb.Spec.MonitoringInterval
-	if interval == 0 {
-		interval =	5
-	}
-	defer interval.Stop()
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	ctx := context.Background()
+	log := log.FromContext(ctx)
 	for {
 		select {
-		case <-interval.C:
+		case <-ticker.C:
 			// Update the PodStatus
 			selfhealingWeb.Status.WatcherStatus = []appv1.PodStatus{}
 			label := map[string]string{
@@ -149,7 +151,6 @@ func (r *SelfhealingWebReconciler) Watcher() {
 				log.Error(err, "Error Listing Pods")
 				return ctrl.Result{}, err
 			}
-
 			for _, pod := range pods.Items {
 				statusCode := checkAPI(pod)
 				selfhealingWeb.Status.WatcherStatus = append(selfhealingWeb.Status.WatcherStatus, appv1.PodStatus{

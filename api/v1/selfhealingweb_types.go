@@ -36,7 +36,6 @@ type SelfhealingWebSpec struct {
 
 	// Foo is an example field of SelfhealingWeb. Edit selfhealingweb_types.go to remove/update
 	Replicas int32 `json:"replicas"`
-	MonitoringInterval int32 `json:"monitoringInterval,omitempty"`
 }
 
 // SelfhealingWebStatus defines the observed state of SelfhealingWeb
