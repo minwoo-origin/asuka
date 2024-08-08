@@ -182,10 +182,8 @@ func (r *SelfhealingWebReconciler) Watcher() {
 				for _, podStatus := range selfhealingWeb.Status.WatcherStatus {
 					if podStatus.PodStatusCode != http.StatusOK {
 						allServiceAvailable = false
-						break
 					if podStatus.PodStatus != "Running" {
 						allRunning = false
-						break
 					}
 				}
 				if allRunning && allServiceAvailable {					// All Pods are Running and Service is Available
