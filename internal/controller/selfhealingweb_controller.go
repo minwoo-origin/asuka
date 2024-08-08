@@ -75,6 +75,7 @@ func (r *SelfhealingWebReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	currentReplicas := int32(len(currentPods.Items))
 	if currentReplicas < desiredReplicas {
 		for i := currentReplicas; i < desiredReplicas; i++ {
+			log.Info("Creating Pod")
 			pod := NewPod(&selfhealingWeb)
 			if err := controllerutil.SetControllerReference(&selfhealingWeb, pod, r.Scheme); err != nil {
 				log.Error(err, "Error Setting Controller Reference")
@@ -87,6 +88,7 @@ func (r *SelfhealingWebReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	} else if currentReplicas > desiredReplicas {
 		for i := currentReplicas - 1; i >= desiredReplicas; i-- {
+			log.Info("Deleting Pod")
 			pod := currentPods.Items[i]
 			if err := r.Delete(ctx, &pod); err != nil {
 				log.Error(err, "Error Deleting Pod")
@@ -100,9 +102,6 @@ func (r *SelfhealingWebReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 // Create Pod
 func NewPod(cr *appv1.SelfhealingWeb) *corev1.Pod {	
-	ctx := context.Background()
-	log := log.FromContext(ctx)
-	log.Info("Create Pod")
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -143,7 +142,7 @@ func (r *SelfhealingWebReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *SelfhealingWebReconciler) Watcher() {
 	ctx := context.Background()
 	log := log.FromContext(ctx)
-	log.Info("Running periodic task")
+	log.Info("Running Periodic Task")
 
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
@@ -151,6 +150,7 @@ func (r *SelfhealingWebReconciler) Watcher() {
 		select {
 		case <-ticker.C:
 			// Update the PodStatus
+			log.Info("Watcher Running")
 			var selfhealingWebs appv1.SelfhealingWebList
 			if err := r.List(ctx, &selfhealingWebs); err != nil {
 				log.Error(err, "Error Listing SelfhealingWebs")
@@ -180,6 +180,18 @@ func (r *SelfhealingWebReconciler) Watcher() {
 					continue
 				}
 			}
+
+			// Evaluate the HealthStatus
+			if selfhealingWeb.Status.WatcherStatus.PodStatus != "Running" {
+				selfhealingWeb.Status.HealthStatus = "Unhealthy"
+			} else {
+				selfhealingWeb.Status.HealthStatus = "Healthy"
+			}
+			if err := r.Status().Update(ctx, &selfhealingWeb); err != nil {
+				log.Error(err, "Error Updating SelfhealingWeb Status")
+				continue
+			}
+			
 		case <-r.stopCh:
 			return
 		}
