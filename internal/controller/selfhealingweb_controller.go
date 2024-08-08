@@ -85,6 +85,7 @@ func (r *SelfhealingWebReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				log.Error(err, "Error Creating Pod")
 				return ctrl.Result{}, err
 			}
+			time.Sleep(5 * time.Second)
 		}
 	} else if currentReplicas > desiredReplicas {
 		for i := currentReplicas - 1; i >= desiredReplicas; i-- {
@@ -94,12 +95,20 @@ func (r *SelfhealingWebReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				log.Error(err, "Error Deleting Pod")
 				return ctrl.Result{}, err
 			}
+			time.Sleep(5 * time.Second)
 		}
 	}
 
 	// Recover Service
-	if selfhealingWeb.Status.HealthStatus == "Warning" || selfhealingWeb.Status.HealthStatus == "Critical" {
+	if selfhealingWeb.Status.HealthStatus == "Critical" {
 		log.Info("Recovering Service")
+		// check unhealthy pod
+		flag := DeleteUnhealthyPod(&selfhealingWeb)
+		if flag {
+			log.Info("Service Recovered")
+		} else {
+			log.Info("Service Recovery Failed")
+		}	
 	}
 		
 	return ctrl.Result{}, nil
@@ -220,4 +229,26 @@ func checkAPI(pod corev1.Pod) int {
 	defer resp.Body.Close()
 	result := resp.StatusCode
 	return result
+}
+
+// Delete Unhealthy Pod
+func DeleteUnhealthyPod(cr *appv1.SelfhealingWeb) boolean {
+	ctx := context.Background()
+	log := log.FromContext(ctx)
+	currentPods := &corev1.PodList{}
+	if err := r.List(ctx, currentPods, client.InNamespace(cr.Namespace), client.MatchingLabels{"app": cr.Name}); err != nil {
+		log.Error(err, "Error Listing Pods")
+		return nil
+	}
+	for _, pod := range currentPods.Items {
+		if pod.Status != "Running" {
+			log.Info("Delete Unhealthy Pod")
+			if err := r.Delete(ctx, &pod); err != nil {
+				log.Error(err, "Error Deleting Pod")
+				return nil
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}	
+	return true
 }
