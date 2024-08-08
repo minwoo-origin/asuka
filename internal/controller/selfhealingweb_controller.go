@@ -96,7 +96,12 @@ func (r *SelfhealingWebReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			}
 		}
 	}
-	
+
+	// Recover Service
+	if selfhealingWeb.Status.HealthStatus == "Warning" || selfhealingWeb.Status.HealthStatus == "Critical" {
+		log.Info("Recovering Service")
+	}
+		
 	return ctrl.Result{}, nil
 }
 
