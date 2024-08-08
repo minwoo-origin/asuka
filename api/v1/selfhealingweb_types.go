@@ -29,12 +29,6 @@ type PodStatus struct {
 	PodStatusCode int `json:"podStatusCode,omitempty"`
 }
 
-type WatcherStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	PodStatus []PodStatus `json:"podStatus,omitempty"`
-}
-
 // SelfhealingWebSpec defines the desired state of SelfhealingWeb
 type SelfhealingWebSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -42,6 +36,7 @@ type SelfhealingWebSpec struct {
 
 	// Foo is an example field of SelfhealingWeb. Edit selfhealingweb_types.go to remove/update
 	Replicas int32 `json:"replicas"`
+	MonitoringInterval int32 `json:"monitoringInterval,omitempty"`
 }
 
 // SelfhealingWebStatus defines the observed state of SelfhealingWeb
@@ -49,6 +44,7 @@ type SelfhealingWebStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	HealthStatus string `json:"healthStatus"`
+	WatcherStatus []PodStatus `json:"watcherStatus,omitempty"`
 }
 
 // +kubebuilder:object:root=true

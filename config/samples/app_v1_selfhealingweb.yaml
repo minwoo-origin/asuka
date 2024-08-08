@@ -4,6 +4,9 @@ metadata:
   labels:
     app.kubernetes.io/name: asuka
     app.kubernetes.io/managed-by: kustomize
-  name: selfhealingweb-sample
+  name: asuka
 spec:
-  # TODO(user): Add fields here
+  # Example of a self-healing web application
+  # replicas: 1
+  replicas: 1
+  

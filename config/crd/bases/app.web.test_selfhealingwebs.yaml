@@ -39,6 +39,9 @@ spec:
           spec:
             description: SelfhealingWebSpec defines the desired state of SelfhealingWeb
             properties:
+              monitoringInterval:
+                format: int32
+                type: integer
               replicas:
                 description: Foo is an example field of SelfhealingWeb. Edit selfhealingweb_types.go
                   to remove/update
@@ -55,6 +58,17 @@ spec:
                   INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
                   Important: Run "make" to regenerate code after modifying this file
                 type: string
+              watcherStatus:
+                items:
+                  properties:
+                    podName:
+                      type: string
+                    podStatus:
+                      type: string
+                    podStatusCode:
+                      type: integer
+                  type: object
+                type: array
             required:
             - healthStatus
             type: object

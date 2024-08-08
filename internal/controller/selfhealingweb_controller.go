@@ -120,7 +120,61 @@ func NewPod(cr *appv1.SelfhealingWeb) *corev1.Pod {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SelfhealingWebReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if r.stopCh != nil {
+		r.stopCh = make(chan struct{})
+		go r.Watcher()
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appv1.SelfhealingWeb{}).
 		Complete(r)
+}
+
+// Periodic Watcher
+func (r *SelfhealingWebReconciler) Watcher() {
+	interval := selfhealingWeb.Spec.MonitoringInterval
+	if interval == 0 {
+		interval =	5
+	}
+	defer interval.Stop()
+	for {
+		select {
+		case <-interval.C:
+			// Update the PodStatus
+			selfhealingWeb.Status.WatcherStatus = []appv1.PodStatus{}
+			label := map[string]string{
+				"app": cr.Name,
+			}
+			var pods corev1.PodList
+			if err := r.List(ctx, &pods, client.MatchingLabels(label)); err != nil {
+				log.Error(err, "Error Listing Pods")
+				return ctrl.Result{}, err
+			}
+
+			for _, pod := range pods.Items {
+				statusCode := checkAPI(pod)
+				selfhealingWeb.Status.WatcherStatus = append(selfhealingWeb.Status.WatcherStatus, appv1.PodStatus{
+					PodName: pod.Name,
+					PodStatus: string(pod.Status.Phase),
+					PodStatusCode: statusCode,
+				})
+			}
+			if err := r.Status().Update(ctx, &selfhealingWeb); err != nil {
+				log.Error(err, "Error Updating SelfhealingWeb Status")
+				return ctrl.Result{}, err
+			}
+		case <-r.stopCh:
+			return
+		}
+	}
+}
+
+// Check API
+func checkAPI(pod corev1.Pod) int {
+	resp, err := http.Get("http://" + pod.Status.PodIP)
+	if err != nil {
+		return http.StatusServiceUnavailable
+	}
+	defer resp.Body.Close()
+	result := resp.StatusCode
+	return result
 }
