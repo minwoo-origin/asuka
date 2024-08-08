@@ -167,6 +167,7 @@ func (r *SelfhealingWebReconciler) Watcher() {
 					log.Error(err, "Error Listing Pods")
 					continue
 				}
+				// Check the API
 				for _, pod := range pods.Items {
 					statusCode := checkAPI(pod)
 					selfhealingWeb.Status.WatcherStatus = append(selfhealingWeb.Status.WatcherStatus, appv1.PodStatus{
@@ -175,23 +176,27 @@ func (r *SelfhealingWebReconciler) Watcher() {
 						PodStatusCode: statusCode,
 					})
 				}
-				if err := r.Status().Update(ctx, &selfhealingWeb); err != nil {
-					log.Error(err, "Error Updating SelfhealingWeb Status")
-					continue
+				// Evaluate the HealthStatus
+				allRunning := true
+				allServiceAvailable := true
+				for _, podStatus := range selfhealingWeb.Status.WatcherStatus {
+					if podStatus.PodStatusCode != http.StatusOK {
+						allServiceAvailable = false
+						break
+					if podStatus.PodStatus != "Running" {
+						allRunning = false
+						break
+					}
+				}
+				if allRunning && allServiceAvailable {					// All Pods are Running and Service is Available
+					selfhealingWeb.Status.HealthStatus = "Healthy"
+				} else if allRunning {									// All Pods are Running but Service is Unavailable
+					selfhealingWeb.Status.HealthStatus = "Warning"
+				} else {												// Some Pods are not Running			
+					selfhealingWeb.Status.HealthStatus = "Critical"
 				}
 			}
 
-			// Evaluate the HealthStatus
-			if selfhealingWeb.Status.WatcherStatus.PodStatus != "Running" {
-				selfhealingWeb.Status.HealthStatus = "Unhealthy"
-			} else {
-				selfhealingWeb.Status.HealthStatus = "Healthy"
-			}
-			if err := r.Status().Update(ctx, &selfhealingWeb); err != nil {
-				log.Error(err, "Error Updating SelfhealingWeb Status")
-				continue
-			}
-			
 		case <-r.stopCh:
 			return
 		}
