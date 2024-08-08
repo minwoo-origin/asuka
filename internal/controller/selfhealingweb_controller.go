@@ -196,6 +196,11 @@ func (r *SelfhealingWebReconciler) Watcher() {
 					selfhealingWeb.Status.HealthStatus = "Critical"
 				}
 			}
+			if err := r.Status().Update(ctx, &selfhealingWeb); err != nil {
+				log.Error(err, "Error Updating Status")
+				continue
+			}
+		}
 
 		case <-r.stopCh:
 			return
