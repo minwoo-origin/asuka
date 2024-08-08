@@ -1,0 +1,23 @@
+# permissions for end users to view selfhealingwebs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: asuka
+    app.kubernetes.io/managed-by: kustomize
+  name: selfhealingweb-viewer-role
+rules:
+- apiGroups:
+  - app.web.test
+  resources:
+  - selfhealingwebs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - app.web.test
+  resources:
+  - selfhealingwebs/status
+  verbs:
+  - get

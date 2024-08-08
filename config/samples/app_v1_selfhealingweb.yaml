@@ -1,0 +1,9 @@
+apiVersion: app.web.test/v1
+kind: SelfhealingWeb
+metadata:
+  labels:
+    app.kubernetes.io/name: asuka
+    app.kubernetes.io/managed-by: kustomize
+  name: selfhealingweb-sample
+spec:
+  # TODO(user): Add fields here

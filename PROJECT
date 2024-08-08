@@ -7,4 +7,14 @@ layout:
 - go.kubebuilder.io/v4
 projectName: asuka
 repo: web.test/asuka
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: web.test
+  group: app
+  kind: SelfhealingWeb
+  path: web.test/asuka/api/v1
+  version: v1
 version: "3"

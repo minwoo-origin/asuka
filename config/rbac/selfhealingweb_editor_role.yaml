@@ -1,0 +1,27 @@
+# permissions for end users to edit selfhealingwebs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: asuka
+    app.kubernetes.io/managed-by: kustomize
+  name: selfhealingweb-editor-role
+rules:
+- apiGroups:
+  - app.web.test
+  resources:
+  - selfhealingwebs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - app.web.test
+  resources:
+  - selfhealingwebs/status
+  verbs:
+  - get
