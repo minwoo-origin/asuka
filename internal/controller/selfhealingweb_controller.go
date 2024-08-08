@@ -100,6 +100,7 @@ func (r *SelfhealingWebReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 // Create Pod
 func NewPod(cr *appv1.SelfhealingWeb) *corev1.Pod {
+	log.Info("Create Pod")
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -134,6 +135,7 @@ func (r *SelfhealingWebReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // Periodic Watcher
 func (r *SelfhealingWebReconciler) Watcher() {
+	log.Info("Running periodic task")
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 	ctx := context.Background()

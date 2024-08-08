@@ -42,7 +42,7 @@ type SelfhealingWebSpec struct {
 type SelfhealingWebStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	HealthStatus string `json:"healthStatus"`
+	HealthStatus string `json:"healthStatus,omitempty"`
 	WatcherStatus []PodStatus `json:"watcherStatus,omitempty"`
 }
 
