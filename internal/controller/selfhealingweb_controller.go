@@ -175,13 +175,13 @@ func (r *SelfhealingWebReconciler) DeleteUnhealthyPods(ctx context.Context, self
 		label := map[string]string{
 			"app": selfhealingWeb.Name,
 		}
-		var pods &corev1.PodList{}
+		var pods corev1.PodList
 		if err := r.List(ctx, &pods, client.MatchingLabels(label)); err != nil {
 			log.Error(err, "Error Listing Pods")
 			return err
 		}
 		for _, pod := range pods.Items {
-			if pod.Status.Phase != corev1.PodRunning {
+			if pod.Status != "Running" {
 				if err := r.Delete(ctx, &pod); err != nil {
 					log.Error(err, "Error Deleting Pod")
 					return err
