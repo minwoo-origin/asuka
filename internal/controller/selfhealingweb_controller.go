@@ -192,9 +192,9 @@ func (r *SelfhealingWebReconciler) DeleteUnhealthyPods(ctx context.Context, self
 				}
 			}
 		}
+	}
 	return nil
 }
-
 
 // Periodic Watcher
 // Interval: 10 seconds
