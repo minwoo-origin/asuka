@@ -142,26 +142,34 @@ func (r *SelfhealingWebReconciler) Watcher() {
 		select {
 		case <-ticker.C:
 			// Update the PodStatus
-			selfhealingWeb.Status.WatcherStatus = []appv1.PodStatus{}
-			label := map[string]string{
-				"app": cr.Name,
+			var selfhealingWebs appv1.SelfhealingWebList
+			if err := r.List(ctx, &selfhealingWebs); err != nil {
+				log.Error(err, "Error Listing SelfhealingWebs")
+				return
 			}
-			var pods corev1.PodList
-			if err := r.List(ctx, &pods, client.MatchingLabels(label)); err != nil {
-				log.Error(err, "Error Listing Pods")
-				return ctrl.Result{}, err
-			}
-			for _, pod := range pods.Items {
-				statusCode := checkAPI(pod)
-				selfhealingWeb.Status.WatcherStatus = append(selfhealingWeb.Status.WatcherStatus, appv1.PodStatus{
-					PodName: pod.Name,
-					PodStatus: string(pod.Status.Phase),
-					PodStatusCode: statusCode,
-				})
-			}
-			if err := r.Status().Update(ctx, &selfhealingWeb); err != nil {
-				log.Error(err, "Error Updating SelfhealingWeb Status")
-				return ctrl.Result{}, err
+
+			for _, selfhealingWeb := range selfhealingWebs.Items {
+				selfhealingWeb.Status.WatcherStatus = []appv1.PodStatus{}
+				label := map[string]string{
+					"app": selfhealingWeb.Name,
+				}
+				var pods corev1.PodList
+				if err := r.List(ctx, &pods, client.MatchingLabels(label)); err != nil {
+					log.Error(err, "Error Listing Pods")
+					return
+				}
+				for _, pod := range pods.Items {
+					statusCode := checkAPI(pod)
+					selfhealingWeb.Status.WatcherStatus = append(selfhealingWeb.Status.WatcherStatus, appv1.PodStatus{
+						PodName: pod.Name,
+						PodStatus: string(pod.Status.Phase),
+						PodStatusCode: statusCode,
+					})
+				}
+				if err := r.Status().Update(ctx, &selfhealingWeb); err != nil {
+					log.Error(err, "Error Updating SelfhealingWeb Status")
+					return
+				}
 			}
 		case <-r.stopCh:
 			return
