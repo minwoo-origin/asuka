@@ -116,8 +116,10 @@ func (r *SelfhealingWebReconciler) ScalePods(ctx context.Context, selfhealingWeb
 		log.Error(err, "Error Listing Pods")
 		return err
 	}
+	desiredReplicas := selfhealingWeb.Spec.Replicas
+	currentReplicas := int32(len(pods.Items))
 
-	if int32(len(pods.Items)) < selfhealingWeb.Spec.Replicas {
+	if currentReplicas < desiredReplicas {
 		// Scale Up
 		for i := int32(len(pods.Items)); i < selfhealingWeb.Spec.Replicas; i++ {
 			pod := &corev1.Pod{
@@ -145,7 +147,7 @@ func (r *SelfhealingWebReconciler) ScalePods(ctx context.Context, selfhealingWeb
 			}
 			time.Sleep(5 * time.Second)
 		}
-	} else if int32(len(pods.Items)) > selfhealingWeb.Spec.Replicas {
+	} else if currentReplicas > desiredReplicas {
 		// Scale Down
 		for i := selfhealingWeb.Spec.Replicas; i < int32(len(pods.Items)); i++ {
 			pod := &corev1.PodList{}.Items[i]
