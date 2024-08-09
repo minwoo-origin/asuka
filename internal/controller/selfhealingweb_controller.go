@@ -271,7 +271,7 @@ func (r *SelfhealingWebReconciler) Watcher() {
 }
 
 // Check API
-func checkAPI(pod corev1.Pod) int, string {
+func checkAPI(pod corev1.Pod) (int, string) {
 	startTime := time.Now()
 	resp, err := http.Get("http://" + pod.Status.PodIP)
 	if err != nil {
