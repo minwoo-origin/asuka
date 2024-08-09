@@ -186,12 +186,12 @@ func (r *SelfhealingWebReconciler) DeleteUnhealthyPods(ctx context.Context, self
 					return err
 				}
 				for _, pod := range pods.Items {
-					log.Info("PodName", pod.Name)
-				//	if err := r.Delete(ctx, &pod); err != nil {
-				//		log.Error(err, "Error Deleting Pod")
-				//		return err
-				//	}
-				//	time.Sleep(5 * time.Second)
+					if pod.Name == podStatus.PodName {
+						if err := r.Delete(ctx, &pod); err != nil {
+							log.Error(err, "Error Deleting Pod")
+							return
+						}
+						time.Sleep(5 * time.Second)
 				}
 			}
 		}
