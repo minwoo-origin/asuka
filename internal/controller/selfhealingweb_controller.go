@@ -275,7 +275,7 @@ func checkAPI(pod corev1.Pod) (int, string) {
 	startTime := time.Now()
 	resp, err := http.Get("http://" + pod.Status.PodIP)
 	if err != nil {
-		return http.StatusServiceUnavailable
+		return http.StatusServiceUnavailable, ""
 	}
 	defer resp.Body.Close()
 	latency := time.Since(startTime)
