@@ -121,7 +121,7 @@ func (r *SelfhealingWebReconciler) ScalePods(ctx context.Context, selfhealingWeb
 
 	if currentReplicas < desiredReplicas {
 		// Scale Up
-		for i := int32(len(pods.Items)); i < selfhealingWeb.Spec.Replicas; i++ {
+		for i := currentReplicas; i < desiredReplicas; i++ {
 			pod := &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					GenerateName: selfhealingWeb.Name + "-",
@@ -149,7 +149,7 @@ func (r *SelfhealingWebReconciler) ScalePods(ctx context.Context, selfhealingWeb
 		}
 	} else if currentReplicas > desiredReplicas {
 		// Scale Down
-		for i := selfhealingWeb.Spec.Replicas; i < int32(len(pods.Items)); i++ {
+		for i := desiredReplicas; i < currentReplicas; i++ {
 			pod := &corev1.PodList{}.Items[i]
 			if err := r.Delete(ctx, pod); err != nil {
 				log.Error(err, "Error Deleting Pod")
