@@ -27,6 +27,7 @@ type PodStatus struct {
 	PodName string `json:"podName,omitempty"`
 	PodStatus string `json:"podStatus,omitempty"`
 	PodStatusCode int `json:"podStatusCode,omitempty"`
+	PodLatency string `json:"podLatency,omitempty"`
 }
 
 // SelfhealingWebSpec defines the desired state of SelfhealingWeb

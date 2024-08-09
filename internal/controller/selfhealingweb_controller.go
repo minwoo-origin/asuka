@@ -232,11 +232,12 @@ func (r *SelfhealingWebReconciler) Watcher() {
 				}
 				// Check the API
 				for _, pod := range pods.Items {
-					statusCode := checkAPI(pod)
+					statusCode, latency := checkAPI(pod)
 					selfhealingWeb.Status.WatcherStatus = append(selfhealingWeb.Status.WatcherStatus, appv1.PodStatus{
 						PodName: pod.Name,
 						PodStatus: string(pod.Status.Phase),
 						PodStatusCode: statusCode,
+						PodLatency: latency,
 					})
 				}
 				// Evaluate the HealthStatus
@@ -270,12 +271,15 @@ func (r *SelfhealingWebReconciler) Watcher() {
 }
 
 // Check API
-func checkAPI(pod corev1.Pod) int {
+func checkAPI(pod corev1.Pod) int, string {
+	startTime := time.Now()
 	resp, err := http.Get("http://" + pod.Status.PodIP)
 	if err != nil {
 		return http.StatusServiceUnavailable
 	}
 	defer resp.Body.Close()
+	latency := time.Since(startTime)
+	latencyString := latency.String()
 	result := resp.StatusCode
-	return result
+	return result, latencyString
 }
