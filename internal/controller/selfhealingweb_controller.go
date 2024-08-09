@@ -174,7 +174,7 @@ func (r *SelfhealingWebReconciler) DeleteUnhealthyPods(ctx context.Context, self
 
 	for _, selfhealingWeb := range selfhealingWebs.Items {
 		for _, podStatus := range selfhealingWeb.Status.WatcherStatus {
-			if podStatus.PodStatusCode != http.StatusOK {
+			if podStatus.PodStatusCode != http.StatusOK || podStatus.PodStatus != "Running" {
 				label := map[string]string{
 					"app": selfhealingWeb.Name,
 				}
