@@ -118,7 +118,6 @@ func (r *SelfhealingWebReconciler) ScalePods(ctx context.Context, selfhealingWeb
 	}
 	desiredReplicas := selfhealingWeb.Spec.Replicas
 	currentReplicas := int32(len(pods.Items))
-
 	if currentReplicas < desiredReplicas {
 		// Scale Up
 		for i := currentReplicas; i < desiredReplicas; i++ {
@@ -149,8 +148,9 @@ func (r *SelfhealingWebReconciler) ScalePods(ctx context.Context, selfhealingWeb
 		}
 	} else if currentReplicas > desiredReplicas {
 		// Scale Down
-		for i := desiredReplicas; i < currentReplicas; i++ {
-			pod := &corev1.PodList{}.Items[i]
+		for i := currentReplicas - 1; i >= desiredReplicas; i-- {
+			pod :=  &pods.Items[i]
+			log.Info("Deleting Pod", "PodName", pod.Name)
 			if err := r.Delete(ctx, pod); err != nil {
 				log.Error(err, "Error Deleting Pod")
 				return err
@@ -158,7 +158,6 @@ func (r *SelfhealingWebReconciler) ScalePods(ctx context.Context, selfhealingWeb
 			time.Sleep(5 * time.Second)
 		}
 	}
-
 	return nil
 }	
 
@@ -182,20 +181,17 @@ func (r *SelfhealingWebReconciler) DeleteUnhealthyPods(ctx context.Context, self
 				log.Info("Deleting Pod", "PodName", podStatus.PodName)
 				// Delete matching Pods with the PodName
 				var pods corev1.PodList
-				listOption := []client.ListOption{
-					client.MatchingLabels(label),
-					client.MatchingFields{"metadata.name": podStatus.PodName},
-				}
-				if err := r.List(ctx, &pods, listOption...); err != nil {
+				if err := r.List(ctx, &pods, client.MatchingLabels(label)); err != nil {
 					log.Error(err, "Error Listing Pods")
 					return err
 				}
 				for _, pod := range pods.Items {
-					if err := r.Delete(ctx, &pod); err != nil {
-						log.Error(err, "Error Deleting Pod")
-						return err
-					}
-					time.Sleep(5 * time.Second)
+					log.Info("PodName", pod.Name)
+				//	if err := r.Delete(ctx, &pod); err != nil {
+				//		log.Error(err, "Error Deleting Pod")
+				//		return err
+				//	}
+				//	time.Sleep(5 * time.Second)
 				}
 			}
 		}
